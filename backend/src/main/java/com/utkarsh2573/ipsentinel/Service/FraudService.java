@@ -20,21 +20,32 @@ public class FraudService {
         response.ip = ip;
 
         Map geo = webClient.get()
-                .uri("http://ip-api.com/json/" + ip)
+                .uri("https://ipwho.is/" + ip)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block();
 
-        if (geo == null || !"success".equals(geo.get("status"))) {
+        if (geo == null || geo.get("success") == null || !(Boolean) geo.get("success")) {
             throw new RuntimeException("Invalid IP or API failure");
         }
 
-        response.country = (String) geo.getOrDefault("country", "Unknown");
-        response.isp = (String) geo.getOrDefault("isp", "Unknown");
-        response.asn = (String) geo.getOrDefault("as", "Unknown");
+        response.country = String.valueOf(geo.getOrDefault("country", "Unknown"));
+        response.countryCode = String.valueOf(geo.get("country_code"));
 
-        response.proxy = geo.get("proxy") != null && (Boolean) geo.get("proxy");
-        response.hosting = geo.get("hosting") != null && (Boolean) geo.get("hosting");
+        Map connection = (Map) geo.get("connection");
+
+        if (connection != null) {
+
+            Object ispObj = connection.get("isp");
+            response.isp = ispObj != null ? String.valueOf(ispObj) : "Unknown";
+
+            Object asnObj = connection.get("asn");
+            response.asn = asnObj != null ? String.valueOf(asnObj) : "Unknown";
+
+        } else {
+            response.isp = "Unknown";
+            response.asn = "Unknown";
+        }
 
         // Tor check
         String torList = webClient.get()

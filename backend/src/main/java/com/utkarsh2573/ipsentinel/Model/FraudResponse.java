@@ -4,6 +4,7 @@ public class FraudResponse {
 
     public String ip;
     public String country;
+    public String countryCode;
     public String isp;
     public String asn;
 
